@@ -48,23 +48,22 @@ router.post('/setting', async (req, res) => {
   res.send({ error: false, message: 'fresh setting success' })
 })
 
-router.post('/logout', async (req, res) => {
-  Object.keys(req.cookies).forEach((key) => {
-    res.clearCookie(key)
-  })
+router.get('/logout', (req, res) => {
+  res.clearCookie('ipb_member_id')
+  res.clearCookie('ipb_pass_hash')
+  res.clearCookie('igneous')
 
-  res.send({ error: false, message: 'logged out' })
+  res.send({ error: false, message: 'Logout success' })
 })
 
-router.get('/test/cookie', async (req, res) => {
-  if (req.cookies.test) {
-    res.clearCookie('test')
-    res.json({ error: false, message: 'success' })
-  } else res.json({ error: true, message: 'cookie no set' })
-})
-router.post('/test/cookie', async (req, res) => {
-  res.cookie('test', true, { maxAge: 180 * 1000 })
-  res.json({ error: false, message: 'cookie set' })
+
+router.get('/check', async (req, res) => {
+  const { ipb_member_id, ipb_pass_hash, igneous } = req.cookies
+  if (!ipb_member_id || !ipb_pass_hash || !igneous) {
+    return res.send({ error: true, message: 'Not login' })
+  }
+  const content = await validateLogin({ ipb_member_id, ipb_pass_hash, igneous })
+  res.send({ error: false, message: content })
 })
 
 module.exports = router
