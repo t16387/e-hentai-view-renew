@@ -57,7 +57,7 @@ const CommentListContent = forwardRef<HTMLUListElement, CommentListProps>(
             }
           })
       }
-    }, [])
+    }, [router])
     return (
       <List ref={ref} className="commnets-list">
         {commentList.length === 0 ? (
@@ -104,6 +104,9 @@ const CommentListContent = forwardRef<HTMLUListElement, CommentListProps>(
     )
   }
 )
+
+CommentListContent.displayName = 'CommentListContent';
+
 const CommentList: React.FC<CommentListProps> = ({ commentList }) => {
   const theme = useTheme()
   const matches = useIsmobile()
