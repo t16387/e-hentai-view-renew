@@ -7,74 +7,84 @@ const { GalleryMode } = require('../constant')
  * @param {int} mode
  */
 function parseGalleryList(document, mode) {
-  const res = []
-  let total = 0
+  const res = [];
+  let total = 0;
 
-  if (mode === GalleryMode.FrontPage || mode === GalleryMode.Favorites)
-    total = parseInt(
-      document.querySelector('p.ip').textContent.replace(/[^0-9]/g, '')
-    )
-  if (mode === GalleryMode.Watched)
-    total = parseInt(
-      document.querySelectorAll('p.ip')[1].textContent.replace(/[^0-9]/g, '')
-    )
-  Array.from(document.querySelectorAll('.itg > tbody > tr'))
-    .slice(1)
-    .forEach((tr) => {
-      try {
-        const title = tr.querySelector('.glink').textContent
-        const category = tr.querySelector('.cn').textContent
-        const posted = dayjs(tr.querySelector('[id^=posted_]').textContent, {
-          utc: true,
-        }).valueOf()
+  console.log(document.documentElement.outerHTML); // Log the entire document
 
-        const rating = _parseRating(
-          tr.querySelector('.ir').getAttribute('style')
-        )
+  // Check for elements before accessing textContent
+  let ipElements = document.querySelectorAll('p.ip');
+  if (mode === GalleryMode.FrontPage || mode === GalleryMode.Favorites) {
+    if (ipElements.length > 0)
+      total = parseInt(ipElements[0].textContent.replace(/[^0-9]/g, ''));
+  }
+  if (mode === GalleryMode.Watched) {
+    if (ipElements.length > 1)
+      total = parseInt(ipElements[1].textContent.replace(/[^0-9]/g, ''));
+  }
 
-        const url = tr
-          .querySelector('.glink')
-          .parentElement.getAttribute('href')
-        const uploader =
-          mode === GalleryMode.Favorites
-            ? ''
-            : tr.querySelector('.gl4c a').textContent
-        const filecount = parseInt(
-          tr.querySelector('.glthumb').textContent.match(/:\d\d(\d+) pages/)[1]
-        )
-        const gid = _parseUrl(url)[0]
-        const token = _parseUrl(url)[1]
-        const thumb =
-          tr.querySelector('.glthumb img').getAttribute('data-src') ||
-          tr.querySelector('.glthumb img').getAttribute('src')
+  Array.from(document.querySelectorAll('.itg > tbody > tr')).slice(1).forEach((tr) => {
+    try {
+      // Extracting elements with safety checks
+      let titleElement = tr.querySelector('.glink');
+      let categoryElement = tr.querySelector('.cn');
+      let postedElement = tr.querySelector('[id^=posted_]');
+      let ratingElement = tr.querySelector('.ir');
+      let uploaderElement = mode === GalleryMode.Favorites ? null : tr.querySelector('.gl4c a');
+      let filecountElement = tr.querySelector('.glthumb');
+      let thumbElement = tr.querySelector('.glthumb img');
 
-        const tags = Array.from(tr.querySelectorAll('.gl3c a div div')).map(
-          (tagRow) => {
-            const watched = tagRow.hasAttribute('style')
-            const title = tagRow.textContent
-            const [namespace, tagName] = tagRow.getAttribute('title').split(':')
-            return { watched, title, namespace, tagName }
-          }
-        )
+      // Check each element before accessing its properties to prevent errors
+      const title = titleElement ? titleElement.textContent : '';
+      const category = categoryElement ? categoryElement.textContent : '';
+      const posted = postedElement ? dayjs(postedElement.textContent, { utc: true }).valueOf() : null;
+      const rating = ratingElement ? _parseRating(ratingElement.getAttribute('style')) : '';
+      const uploader = uploaderElement ? uploaderElement.textContent : '';
 
-        res.push({
-          gid,
-          token,
-          posted,
-          title,
-          category,
-          rating,
-          uploader,
-          filecount,
-          thumb,
-          tags,
-        })
-      } catch (e) {
-        console.error(e)
+      let url, filecount, gid, token, thumb;
+      if (titleElement) {
+        url = titleElement.parentElement.getAttribute('href');
+        gid = _parseUrl(url)[0];
+        token = _parseUrl(url)[1];
       }
-    })
-  if (mode === GalleryMode.Popular) total = res.length
-  return { list: res, total }
+
+      if (filecountElement) {
+        let filecountMatch = filecountElement.textContent.match(/:\d\d(\d+) pages/);
+        filecount = filecountMatch ? parseInt(filecountMatch[1]) : 0;
+      }
+
+      thumb = thumbElement ? (thumbElement.getAttribute('data-src') || thumbElement.getAttribute('src')) : '';
+
+      // Extract tags safely
+      const tagsElements = tr.querySelectorAll('.gl3c a div div');
+      const tags = (tagsElements.length > 0) ? Array.from(tagsElements).map(tagRow => {
+        const watched = tagRow.hasAttribute('style');
+        const title = tagRow.textContent;
+        const [namespace, tagName] = tagRow.getAttribute('title').split(':');
+        return { watched, title, namespace, tagName };
+      }) : [];
+
+      res.push({
+        gid,
+        token,
+        posted,
+        title,
+        category,
+        rating,
+        uploader,
+        filecount,
+        thumb,
+        tags,
+      });
+
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+  if (mode === GalleryMode.Popular) total = res.length;
+
+  return { list: res, total };
 }
 
 /**
