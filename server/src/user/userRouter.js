@@ -48,14 +48,13 @@ router.post('/setting', async (req, res) => {
   res.send({ error: false, message: 'fresh setting success' })
 })
 
-router.get('/logout', (req, res) => {
+router.post('/logout', (req, res) => {
   res.clearCookie('ipb_member_id')
   res.clearCookie('ipb_pass_hash')
   res.clearCookie('igneous')
 
   res.send({ error: false, message: 'Logout success' })
 })
-
 
 router.get('/check', async (req, res) => {
   const { ipb_member_id, ipb_pass_hash, igneous } = req.cookies
