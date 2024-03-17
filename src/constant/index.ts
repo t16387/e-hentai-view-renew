@@ -16,4 +16,5 @@ export const languageMap: Record<string, string> = {
   th: 'ภาษาไทย',
   kr: '한국어',
   ms: 'Bahasa Melayu',
+  'zh-hk': '繁體中文',
 }
