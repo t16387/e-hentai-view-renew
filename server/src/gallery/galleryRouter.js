@@ -94,7 +94,21 @@ router.get('/loadImg', async (req, res) => {
 })
 
 router.get('/proxy', async (req, res) => {
-  const url = req.query.url
+  const url = req.query.url;
+  const cacheKey = `proxy:${url}`;
+
+  let cachedResponse = cache.get(cacheKey);
+
+  if (cachedResponse) {
+    Object.entries(cachedResponse.headers).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+    res.setHeader('cache-control', 'max-age=31536000, public, immutable');
+    res.setHeader('max-age', '31536000');
+    cachedResponse.data.pipe(res);
+    return;
+  }
+
   axios
     .get(url, {
       headers: { Cookie: getCookieString(req.cookies) },
@@ -102,14 +116,21 @@ router.get('/proxy', async (req, res) => {
     })
     .then((response) => {
       Object.entries(response.headers).forEach(([key, value]) => {
-        res.setHeader(key, value)
-      })
-      res.setHeader('cache-control', 'max-age=31536000, public, immutable')
-      res.setHeader('max-age', '31536000')
-      response.data.pipe(res)
+        res.setHeader(key, value);
+      });
+      res.setHeader('cache-control', 'max-age=31536000, public, immutable');
+      res.setHeader('max-age', '31536000');
+
+      // Cache the response
+      cache.set(cacheKey, {
+        data: response.data,
+        headers: response.headers,
+      }, 3600); // Cache for 1 hour
+
+      response.data.pipe(res);
     })
     .catch((err) => {
-      res.status(500).send(err.message)
-    })
-})
+      res.status(500).send(err.message);
+    });
+});
 module.exports = router

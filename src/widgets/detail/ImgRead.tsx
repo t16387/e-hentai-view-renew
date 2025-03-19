@@ -149,9 +149,10 @@ const ImgRead: React.FC<ImgReadProps> = ({
           setFreshKey(Math.random())
           continue
         }
-        dataSource[i].url = dataSource[i].url + '?nl=' + res.retryURL
+        const proxiedUrl = '/api/gallery/proxy?url=' + encodeURIComponent(dataSource[i].url + '?nl=' + res.retryURL);
+        dataSource[i].url = proxiedUrl
         setCacheImg((t) => {
-          t[i] = res.url + '?t=' + freshKey
+          t[i] = proxiedUrl + '&t=' + freshKey
           return [...t]
         })
       }
