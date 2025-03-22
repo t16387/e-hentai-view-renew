@@ -4,7 +4,7 @@ import { Box, Button, Grid, Typography } from '@mui/material'
 import createStyles from '@mui/styles/createStyles'
 import makeStyles from '@mui/styles/makeStyles'
 import { useTranslation } from 'next-i18next'
-import React from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 export const useStyles = makeStyles((theme) =>
   createStyles({
     searchButton: { marginLeft: theme.spacing(1) },
@@ -35,9 +35,28 @@ export interface GalleryListProps extends UseGalleryListOptions {}
 const GalleryList: React.FC<GalleryListProps> = (props) => {
   const classes = useStyles()
   const [t] = useTranslation()
+  const [page, setPage] = useState(0)
 
-  const { dataSource, inviewRef, isEmpty, isLoadingMore, isReachingEnd } =
-    useGalleryList<HTMLButtonElement>(props)
+  const {
+    dataSource,
+    isEmpty,
+    isLoadingMore,
+    isReachingEnd,
+    error,
+  } = useGalleryList({ ...props, page })
+
+  const handleNextPage = useCallback(() => {
+    setPage((prevPage) => prevPage + 1)
+  }, [setPage])
+
+  const handlePrevPage = useCallback(() => {
+    setPage((prevPage) => Math.max(prevPage - 1, 0))
+  }, [setPage])
+
+  useEffect(() => {
+    // Reset page to 0 when the mode or f_search changes
+    setPage(0)
+  }, [props.mode, props.f_search, setPage])
 
   if (isEmpty)
     return (
@@ -67,15 +86,20 @@ const GalleryList: React.FC<GalleryListProps> = (props) => {
             .fill(0)
             .map((_, k) => <LoadingCard key={k} />)}
       </Grid>
-      {!isEmpty && (
-        <Button ref={inviewRef} fullWidth className={classes.btn}>
-          {isReachingEnd
-            ? t('ReachEnd')
-            : isLoadingMore
-            ? t('Loading') + '...'
-            : t('More')}
+      <Box display="flex" justifyContent="space-between" className={classes.btn}>
+        <Button
+          disabled={page === 0}
+          onClick={handlePrevPage}
+        >
+          {t('Previous Page')}
         </Button>
-      )}
+        <Button
+          disabled={isReachingEnd}
+          onClick={handleNextPage}
+        >
+          {t('Next Page')}
+        </Button>
+      </Box>
     </>
   )
 }

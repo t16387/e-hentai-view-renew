@@ -1,30 +1,28 @@
 import { axios } from '@/apis'
 import { GalleriesPage } from '@/interface/gallery'
-import { useEffect } from 'react'
 import { useSWRInfinite } from 'swr'
-import useInViewportWithDistance from './useInViewportWithDistance'
 
 export interface UseGalleryListOptions {
   f_search?: string
   mode: 'index' | 'popular' | 'favorites' | 'watched'
   favcat?: string
+  page?: number
 }
 export default function useGalleryList<T extends HTMLElement = HTMLDivElement>(
   options: UseGalleryListOptions
 ) {
-  const { mode, f_search, favcat } = options
-  const [inview, inviewRef] = useInViewportWithDistance<T>(600)
+  const { mode, f_search, favcat, page = 0 } = options
   const { data, error, size, setSize } = useSWRInfinite<GalleriesPage['list']>(
-    (offset) => {
+    (index) => {
       switch (mode) {
         case 'index':
-          return `/api/gallery?page=${offset}&f_search=${f_search}`
+          return `/api/gallery?page=${page + index}&f_search=${f_search}`
         case 'popular':
           return '/api/popular'
         case 'favorites':
-          return `/api/favorites?page=${offset || 0}&favcat=${favcat}`
+          return `/api/favorites?page=${page + index}&favcat=${favcat}`
         case 'watched':
-          return `/api/watched?page=${offset || 0}`
+          return `/api/watched?page=${page + index}`
       }
     },
     async (url: string) => {
@@ -46,17 +44,12 @@ export default function useGalleryList<T extends HTMLElement = HTMLDivElement>(
     (data && data[data.length - 1].length < (mode === 'favorites' ? 50 : 25))
   // const isRefreshing = isValidating && data && data.length === size
 
-  useEffect(() => {
-    if (inview && !isLoadingMore && !isReachingEnd) setSize((size) => size + 1)
-  }, [inview, isLoadingMore, isReachingEnd, setSize, mode])
-
   return {
     dataSource,
     isEmpty,
     isReachingEnd,
     isLoadingInitialData,
     isLoadingMore,
-    inviewRef,
     error,
   }
 }
