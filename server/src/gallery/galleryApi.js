@@ -60,12 +60,21 @@ async function gdata(gidlist, cookies) {
   return res
 }
 
-async function galleryList({ page, f_search }, cookies) {
-  const res = await axios.get(`${baseURL}`, {
+async function galleryList({ page, f_search, next, prev }, cookies) {
+  let url = `${baseURL}`;
+  if (next) {
+    url = `https://exhentai.org/?next=${next}`;
+  } else if (prev) {
+    url = `https://exhentai.org/?prev=${prev}`;
+  }
+   else {
+    url = `${baseURL}`;
+  }
+  const res = await axios.get(url, {
     headers: {
       Cookie: cookies,
     },
-    params: { page, f_search, inline_set: 'dm_l' },
+    params: { f_search, inline_set: 'dm_l' },
     maxRedirects: 2,
   })
   const document = new JSDOM(res.data).window.document
@@ -80,15 +89,17 @@ async function galleryList({ page, f_search }, cookies) {
   }
 
   try {
-    const res = parseGalleryList(document, GalleryMode.FrontPage)
-    total = res.total
-    list = res.list
-    if (list.length === 0) throw new Error('parse faild')
+    const parsedData = parseGalleryList(document, GalleryMode.FrontPage);
+    total = parsedData.total;
+    list = parsedData.list;
+    const prevurl = parsedData.prevurl;
+    const nexturl = parsedData.nexturl;
+    if (list.length === 0) throw new Error('parse faild');
+    return { list, total, prevurl, nexturl };
   } catch (error) {
-    console.error(error)
+    console.error(error);
+    return { list: [], total: 0, prevurl: '', nexturl: '' };
   }
-
-  return { list, total }
 }
 
 async function galleryDetail({ gid, token }, cookies) {

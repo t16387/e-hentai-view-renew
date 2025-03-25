@@ -12,29 +12,24 @@ const cache = require('../cache')
 const router = express.Router()
 
 router.get('/', async (req, res) => {
-  const page = parseInt(req.query.page || 0)
-  const f_search = req.query.f_search || ''
+  const page = parseInt(req.query.page || 0);
+  const f_search = req.query.f_search || '';
+  const next = req.query.next || '';
+  const prev = req.query.prev || '';
 
-  const cacheKey =
-    `[g${req.cookies.ipb_member_id}]` +
-    JSON.stringify({
-      page,
-      f_search,
-      cookie: getCookieString(req.cookies),
-    })
+  const cacheKey = `[g${req.cookies.ipb_member_id}]` + JSON.stringify({ page, f_search, next, prev, cookie: getCookieString(req.cookies) });
 
-  let content = cache.get(cacheKey)
+  let content = cache.get(cacheKey);
   if (!content) {
     content = await galleryList(
-      { page, f_search },
+      { page, f_search, next, prev },
       getCookieString(req.cookies)
-    )
-
-    cache.set(cacheKey, content, 180)
+    );
+    cache.set(cacheKey, content, 180);
   }
 
-  res.json(content)
-})
+  res.json(content);
+});
 
 router.get('/:gid/:token', async (req, res) => {
   const { gid, token } = req.params

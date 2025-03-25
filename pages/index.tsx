@@ -10,7 +10,7 @@ const IndexPage = () => {
 
   return (
     <Layout showAvatar showSearch>
-      <GalleryList key={f_search} mode="index" f_search={f_search} page={0} />
+      <GalleryList key={f_search} mode="index" f_search={f_search} />
     </Layout>
   )
 }

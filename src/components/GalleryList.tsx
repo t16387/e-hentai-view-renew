@@ -1,10 +1,13 @@
-import useGalleryList, { UseGalleryListOptions } from '@/hooks/useGalleryList'
-import GalleryCard, { LoadingCard } from '@/components/GalleryCard'
-import { Box, Button, Grid, Typography } from '@mui/material'
-import createStyles from '@mui/styles/createStyles'
-import makeStyles from '@mui/styles/makeStyles'
-import { useTranslation } from 'next-i18next'
-import React, { useState, useCallback, useEffect } from 'react'
+import useGalleryList, { UseGalleryListOptions } from '@/hooks/useGalleryList';
+import GalleryCard, { LoadingCard } from '@/components/GalleryCard';
+import { Box, Button, Grid, Typography } from '@mui/material';
+import createStyles from '@mui/styles/createStyles';
+import makeStyles from '@mui/styles/makeStyles';
+import { useTranslation } from 'next-i18next';
+import React, { useCallback } from 'react';
+import { useRouter } from 'next/router';
+import { PropsWithChildren } from 'react';
+
 export const useStyles = makeStyles((theme) =>
   createStyles({
     searchButton: { marginLeft: theme.spacing(1) },
@@ -29,34 +32,50 @@ export const useStyles = makeStyles((theme) =>
       },
     },
   })
-)
+);
 
 export interface GalleryListProps extends UseGalleryListOptions {}
 const GalleryList: React.FC<GalleryListProps> = (props) => {
-  const classes = useStyles()
-  const [t] = useTranslation()
-  const [page, setPage] = useState(0)
+  const classes = useStyles();
+  const [t] = useTranslation();
+  const router = useRouter();
 
   const {
     dataSource,
     isEmpty,
-    isLoadingMore,
     isReachingEnd,
+    isLoading,
     error,
-  } = useGalleryList({ ...props, page })
+    prevurl,
+    nexturl,
+  } = useGalleryList(props);
+
+  console.log('nexturl:', nexturl);
 
   const handleNextPage = useCallback(() => {
-    setPage((prevPage) => prevPage + 1)
-  }, [setPage])
+    if (nexturl) {
+      const url = new URL(nexturl);
+      const next = url.searchParams.get('next');
+      const f_search = router.query.f_search || props.f_search || "";
+      router.push({
+        pathname: '/',
+        query: { f_search: f_search, next: next },
+      });
+    }
+  }, [nexturl, router, router.query.next]);
 
+  console.log('prevurl:', nexturl);
   const handlePrevPage = useCallback(() => {
-    setPage((prevPage) => Math.max(prevPage - 1, 0))
-  }, [setPage])
-
-  useEffect(() => {
-    // Reset page to 0 when the mode or f_search changes
-    setPage(0)
-  }, [props.mode, props.f_search, setPage])
+    if (prevurl) {
+      const url = new URL(prevurl);
+      const next = url.searchParams.get('next');
+      const f_search = router.query.f_search || props.f_search || "";
+      router.push({
+        pathname: '/',
+        query: { f_search: f_search, next: next },
+      });
+    }
+  }, [nexturl, router, router.query.next]);
 
   if (isEmpty)
     return (
@@ -65,7 +84,7 @@ const GalleryList: React.FC<GalleryListProps> = (props) => {
           {t('Search.NoThisFound')}
         </Typography>
       </Box>
-    )
+    );
 
   return (
     <>
@@ -81,27 +100,27 @@ const GalleryList: React.FC<GalleryListProps> = (props) => {
             <GalleryCard record={o} />
           </Grid>
         ))}
-        {isLoadingMore &&
+        {isLoading &&
           Array(25)
             .fill(0)
             .map((_, k) => <LoadingCard key={k} />)}
       </Grid>
       <Box display="flex" justifyContent="space-between" className={classes.btn}>
         <Button
-          disabled={page === 0}
+          disabled={!prevurl}
           onClick={handlePrevPage}
         >
           {t('Previous Page')}
         </Button>
         <Button
-          disabled={isReachingEnd}
+          disabled={!nexturl}
           onClick={handleNextPage}
         >
           {t('Next Page')}
         </Button>
       </Box>
     </>
-  )
-}
+  );
+};
 
-export default GalleryList
+export default GalleryList;

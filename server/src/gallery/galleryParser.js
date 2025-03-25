@@ -84,7 +84,20 @@ function parseGalleryList(document, mode) {
 
   if (mode === GalleryMode.Popular) total = res.length;
 
-  return { list: res, total };
+  let prevurl = '';
+  let nexturl = '';
+  const searchNav = document.querySelector('.searchnav');
+  if (searchNav) {
+    const prevElement = searchNav.querySelector('#uprev'); // Corrected selector
+    if (prevElement) {
+      prevurl = prevElement.href || ''; // Corrected extraction
+    }
+    const nextElement = searchNav.querySelector('#unext');
+    if (nextElement) {
+      nexturl = nextElement.href || '';
+    }
+  }
+  return { list: res, total, prevurl, nexturl };
 }
 
 /**
