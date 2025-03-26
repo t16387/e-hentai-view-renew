@@ -140,18 +140,23 @@ async function parseHTMLAnchorElement(document) {
 function parseDetailPageList(document) {
   const gdts = document
     .getElementById('gdt')
-    .querySelectorAll('div[class^="gdt"')
+    .querySelectorAll('a') // Select all 'a' elements directly
+
   const filecount = parseInt(
     document
       .querySelector('#gdd table tr:nth-of-type(6) .gdt2')
       .textContent.replace(/[^0-9]/g, '')
   )
   return {
-    list: Array.from(gdts).map((gdt) => {
-      const aEl = gdt.querySelector('a')
-      const imgEl = gdt.querySelector('img')
+    list: Array.from(gdts).map((aEl) => { // Iterate over 'a' elements
+      const divEl = aEl.querySelector('div'); // Get the 'div' inside 'a'
+      const style = divEl.getAttribute('style');
+      const thumb = style ? style.match(/url\((.*?)\)/)[1] : ''; // Extract URL from style
 
-      return { thumb: imgEl.src, url: aEl.href }
+      console.log("thumb:", thumb);
+      console.log("aEl.href:", aEl.href);
+
+      return { thumb: thumb, url: aEl.href }
     }),
     total: filecount,
   }

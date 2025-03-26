@@ -75,6 +75,7 @@ const Detail: NextPage = () => {
   const [t] = useTranslation()
 
   const { data } = useGallery({ url: `/${gid}/${token}` })
+  console.log('data from useGallery:', data);
   const classes = useStyles()
 
   if (!data || data.error) {

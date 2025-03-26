@@ -43,7 +43,6 @@ router.get('/:gid/:token', async (req, res) => {
   const cacheKey = `/${gid}/${token}/0`
   cache.set(cacheKey, content.list)
   content.list = content.list.list
-
   res.json(content)
 })
 router.get('/:gid/:token/torrent', async (req, res) => {
@@ -70,6 +69,7 @@ router.get('/:gid/:token/:p', async (req, res) => {
     cache.set(cacheKey, content)
   }
 
+  console.log("content.list:", content.list);
   res.json({ error: false, list: content.list, total: content.total })
 })
 
