@@ -13,10 +13,9 @@ import React, { useEffect } from 'react'
 import { useSWRInfinite } from 'swr'
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    // Remove maxHeight and minHeight, let inline style control size
     cover: {
-      margin: theme.spacing(0, 'auto'),
-      maxHeight: 320,
-      minHeight: 150,
+      margin: theme.spacing(0, 'auto'), // Keep horizontal centering
     },
 
     container: {
@@ -48,13 +47,23 @@ const PageList: React.FC<Omit<PageListProps, 'filecount'>> = ({
   const classes = useStyles()
   const router = useRouter()
   const handleOpen = (k?: number) => {
-    if (k)
+    console.log('handleOpen called with index:', k); // Log the index received
+    console.log('Base URL prop:', url); // Log the base URL
+    if (k !== undefined) { // Check if k is defined (it should be the index i)
+      const targetPath = url + '/read?current=' + k;
+      const targetAs = '/[gid]/[token]/read?current=' + k;
+      console.log('Navigating to path:', targetPath); // Log the target path
+      console.log('Navigating as:', targetAs); // Log the 'as' path
       router.push(
-        '/[gid]/[token]/read?current=' + k,
-        url + '/read?current=' + k
-      )
-    else router.push('/[gid]/[token]/read', url + '/read')
-  }
+        targetAs, // Use the 'as' path for browser history
+        targetPath // Use the actual path for Next.js routing
+      );
+    } else {
+      // This case shouldn't happen when clicking a specific thumbnail
+      console.log('handleOpen called without index, navigating to base read page');
+      router.push('/[gid]/[token]/read', url + '/read');
+    }
+  };
 
   const { data, error, size, setSize } = useSWRInfinite(
     (offset) => `/api/gallery${url}/${offset}`,
@@ -79,17 +88,29 @@ const PageList: React.FC<Omit<PageListProps, 'filecount'>> = ({
   return (
     <>
       <Grid container className={classes.container} spacing={2}>
-        {dataSource.map((o, i) => (
-          <Grid item key={o.url} container wrap="nowrap" direction="column">
-            <Grid item xs>
-              <Card>
+        {dataSource.map((o, i) => ( // Removed the wrapping braces and console.log
+            <Grid item key={o.url} container wrap="nowrap" direction="column">
+              <Grid item xs>
+                <Card>
                 <CardActionArea onClick={() => handleOpen(i)}>
-                  <LoadMedia className={classes.cover} src={o.thumb} />
+                  {/* Replace LoadMedia with a div using background styles */}
+                  <div
+                    className={classes.cover} // Apply centering class
+                    style={{
+                      width: o.style.width ? `${o.style.width}px` : 'auto',
+                      height: o.style.height ? `${o.style.height}px` : 'auto',
+                      backgroundImage: o.style.backgroundUrl ? `url(${o.style.backgroundUrl})` : 'none',
+                      // Calculate backgroundPosition dynamically: -((index % 20) * width)px 0px
+                      backgroundPosition: o.style.width ? `-${(i % 20) * o.style.width}px 0px` : '0 0',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: 'auto', // Ensure the sprite isn't scaled
+                    }}
+                  />
                 </CardActionArea>
               </Card>
             </Grid>
-            <Typography align="center">{i + 1}</Typography>
-          </Grid>
+              <Typography align="center">{i + 1}</Typography>
+            </Grid>
         ))}
         {isLoadingMore &&
           new Array(20).fill(0).map((_, k) => (

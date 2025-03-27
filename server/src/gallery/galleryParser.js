@@ -150,16 +150,27 @@ function parseDetailPageList(document) {
   return {
     list: Array.from(gdts).map((aEl) => { // Iterate over 'a' elements
       const divEl = aEl.querySelector('div'); // Get the 'div' inside 'a'
-      const style = divEl.getAttribute('style');
-      const thumb = style ? style.match(/url\((.*?)\)/)[1] : ''; // Extract URL from style
+      const style = divEl.getAttribute('style') || ''; // Ensure style is a string
+      const styleProps = {};
 
-      console.log("thumb:", thumb);
-      console.log("aEl.href:", aEl.href);
+      // Extract style properties using regex
+      const widthMatch = style.match(/width:(\d+)px/);
+      const heightMatch = style.match(/height:(\d+)px/);
+      const urlMatch = style.match(/url\((.*?)\)/); // Original URL regex
 
-      return { thumb: thumb, url: aEl.href }
+      if (widthMatch) styleProps.width = parseInt(widthMatch[1], 10);
+      if (heightMatch) styleProps.height = parseInt(heightMatch[1], 10);
+      if (urlMatch) styleProps.backgroundUrl = urlMatch[1];
+      // No backgroundPosition extraction here
+
+      // console.log("styleProps:", styleProps);
+      // console.log("aEl.href:", aEl.href);
+
+      // Return the extracted style properties along with the page URL
+      return { style: styleProps, url: aEl.href };
     }),
     total: filecount,
-  }
+  };
 }
 
 function parseDetailPageCommentList(document) {

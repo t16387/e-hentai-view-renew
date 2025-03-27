@@ -53,10 +53,16 @@ export interface Torrent {
   url: string
 }
 
+export interface DetailPageListItemStyleProps {
+  width?: number;
+  height?: number;
+  backgroundUrl?: string;
+  // backgroundPosition removed
+}
+
 export interface DetailPageListItemProps {
-  thumb: string
-  url: string
-  aspectratio: number
+  style: DetailPageListItemStyleProps;
+  url: string;
 }
 export interface commentListItemProps {
   time: number
