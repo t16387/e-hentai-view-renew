@@ -63,6 +63,8 @@ export interface DetailPageListItemStyleProps {
 export interface DetailPageListItemProps {
   style: DetailPageListItemStyleProps;
   url: string;
+  thumb?: string; // Added optional thumb property
+  aspectratio?: number; // Added optional aspectratio property
 }
 export interface commentListItemProps {
   time: number

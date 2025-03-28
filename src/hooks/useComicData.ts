@@ -36,7 +36,7 @@ export default function useComicData(
   useEffect(() => {
     const fn = async () => {
       let res = await getPageWithRetry(`/api/gallery${comicUrl}/0`)
-      res.list.forEach((o) => (o!.aspectratio = 210 / 297))
+      // res.list.forEach((o) => (o!.aspectratio = 210 / 297)) // Removed hardcoded aspect ratio
       mutate(
         comicPagesKey,
         (data: ComicListDataSourceProps) => ({
@@ -62,7 +62,7 @@ export default function useComicData(
       })
 
       let res = await getPageWithRetry(`/api/gallery${comicUrl}/${pageIndex}`)
-      res.list.forEach((o) => (o!.aspectratio = 210 / 297))
+      // res.list.forEach((o) => (o!.aspectratio = 210 / 297)) // Removed hardcoded aspect ratio
 
       mutate(
         comicPagesKey,

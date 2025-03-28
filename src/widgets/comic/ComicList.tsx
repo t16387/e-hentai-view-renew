@@ -1,4 +1,8 @@
-import { EVENT_JUMP_PAGE, EVENT_TOGGLE_CONTROLS } from '@/constant'
+import {
+  EVENT_JUMP_PAGE,
+  EVENT_LOAD_MORE_PAGE,
+  EVENT_TOGGLE_CONTROLS,
+} from '@/constant'
 import useComicData from '@/hooks/useComicData'
 import useEventManager from '@/hooks/useEventListenerEnhance'
 import { Theme } from '@mui/material/styles'
@@ -15,6 +19,7 @@ import {
   computedCurrentTarget,
   computedFullHeight,
   computedTargetHeight,
+  pageSize,
 } from './utils'
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -48,6 +53,7 @@ const ComicList: React.FC<{ comicUrl: string; defaultCurrent: number }> = ({
 
   const jumpPage$ = useEventManager(EVENT_JUMP_PAGE)
   const toggleControls$ = useEventManager(EVENT_TOGGLE_CONTROLS)
+  const loadMorePage$ = useEventManager(EVENT_LOAD_MORE_PAGE)
 
   useMount(() => {
     if (defaultCurrent === -1) {
@@ -84,13 +90,34 @@ const ComicList: React.FC<{ comicUrl: string; defaultCurrent: number }> = ({
   }, [comicPagesKey, jumpPage$])
 
   useEventListener('scroll', () => {
-    if (document.scrollingElement) {
-      const top = document.scrollingElement.scrollTop
+    if (document.scrollingElement && dataRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = document.scrollingElement
+      const threshold = window.innerHeight * 1.5 // Load when 1.5 screens away from bottom
+
       mutate(comicPagesKey, (data: ComicListDataSourceProps) => {
-        const current = computedCurrentTarget(data.list, top)
+        if (!data) return // Should not happen, but safety check
+
+        // Update current page based on scroll position
+        const current = computedCurrentTarget(data.list, scrollTop)
+        let updatedData = data
         if (current !== data.current) {
-          return { ...data, current }
+          updatedData = { ...data, current }
         }
+
+        // Check if we need to load more pages
+        const currentPageIndex = Math.floor(current / pageSize)
+        const nextPageIndexToLoad = currentPageIndex + 1
+        const totalPageCount = Math.ceil(data.total / pageSize)
+
+        if (
+          nextPageIndexToLoad < totalPageCount &&
+          scrollTop + clientHeight >= scrollHeight - threshold
+        ) {
+          // Use dataRef to avoid stale closure issues if needed, though mutate should provide latest
+          loadMorePage$.emit(nextPageIndexToLoad)
+        }
+
+        return updatedData === data ? undefined : updatedData // Avoid unnecessary re-renders if nothing changed
       })
     }
   })
