@@ -57,26 +57,63 @@ async function gdata(gidlist, cookies) {
     })
     .reduce((prev, next) => [...prev, ...next], [])
 
-  return res
+  return res;
 }
 
-async function galleryList({ page, f_search, next, prev }, cookies) {
+// Update function signature to accept a query object
+async function galleryList(query, cookies) {
+  const { next, prev, ...searchParams } = query; // Destructure next/prev for URL, keep rest for params
   let url = `${baseURL}`;
+
+  // Handle pagination URLs
   if (next) {
-    url = `https://exhentai.org/?next=${next}`;
+    url = `${baseURL}?next=${next}`;
   } else if (prev) {
-    url = `https://exhentai.org/?prev=${prev}`;
+    url = `${baseURL}?prev=${prev}`;
   }
-   else {
-    url = `${baseURL}`;
+  // Note: If both next/prev and other search params exist, E-Hentai prioritizes next/prev.
+  // If only search params exist, the base URL is used.
+
+  // Construct params object dynamically
+  const params = {
+    inline_set: 'dm_l', // Keep default display mode
+  };
+
+  // Add known search parameters if they exist in the query
+  const allowedSearchParams = [
+    'f_search',
+    'advsearch', // Flag for advanced search usage
+    'f_sh',     // Show Expunged
+    'f_sto',    // Show Torrent
+    'f_spf',    // Page Start
+    'f_spt',    // Page End
+    'f_srdd',   // Minimum Rating
+    'f_sfl',    // Disable Language Filter
+    'f_sfu',    // Disable Uploader Filter
+    'f_sft',    // Disable Tag Filter
+    // Add other potential E-Hentai params if needed, e.g., f_cats
+    'f_cats',
+    'page' // Standard page number if not using next/prev
+  ];
+
+  for (const key in searchParams) {
+    if (allowedSearchParams.includes(key) && searchParams[key] !== undefined && searchParams[key] !== null && searchParams[key] !== '') {
+      params[key] = searchParams[key];
+    }
   }
+
+  // If using next/prev, remove 'page' param as it's redundant/conflicting
+  if (next || prev) {
+    delete params.page;
+  }
+
   const res = await axios.get(url, {
     headers: {
       Cookie: cookies,
     },
-    params: { f_search, inline_set: 'dm_l' },
+    params: params, // Use dynamically constructed params
     maxRedirects: 2,
-  })
+  });
   const document = new JSDOM(res.data).window.document
   let list = []
   let total = 0

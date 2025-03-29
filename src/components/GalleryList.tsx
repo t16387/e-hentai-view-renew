@@ -54,28 +54,47 @@ const GalleryList: React.FC<GalleryListProps> = (props) => {
 
   const handleNextPage = useCallback(() => {
     if (nexturl) {
-      const url = new URL(nexturl);
-      const next = url.searchParams.get('next');
-      const f_search = router.query.f_search || props.f_search || "";
-      router.push({
-        pathname: '/',
-        query: { f_search: f_search, next: next },
-      });
+      try {
+        const url = new URL(nexturl); // Ensure nexturl is a full valid URL or handle base path
+        const next = url.searchParams.get('next');
+        if (next) {
+          const currentQuery = { ...router.query };
+          delete currentQuery.prev; // Remove prev if it exists
+          currentQuery.next = next; // Add/replace next
+          router.push({
+            pathname: router.pathname, // Stay on the current page (e.g., / or /result)
+              query: currentQuery,
+            }, undefined, { shallow: true }); // Use shallow routing for pagination
+            window.scrollTo(0, 0); // Scroll to top after navigation
+          }
+        } catch (e) {
+          console.error("Error parsing nexturl:", e);
+        // Fallback or error handling if nexturl is not valid
+      }
     }
-  }, [nexturl, router, router.query.next]);
+  }, [nexturl, router]); // Dependencies: nexturl, router object (pathname, query)
 
-  console.log('prevurl:', nexturl);
   const handlePrevPage = useCallback(() => {
     if (prevurl) {
-      const url = new URL(prevurl);
-      const next = url.searchParams.get('next');
-      const f_search = router.query.f_search || props.f_search || "";
-      router.push({
-        pathname: '/',
-        query: { f_search: f_search, next: next },
-      });
+       try {
+        const url = new URL(prevurl); // Ensure prevurl is a full valid URL or handle base path
+        const prev = url.searchParams.get('prev'); // E-Hentai uses 'prev' param for previous page links
+         if (prev) {
+            const currentQuery = { ...router.query };
+            delete currentQuery.next; // Remove next if it exists
+            currentQuery.prev = prev; // Add/replace prev
+            router.push({
+              pathname: router.pathname, // Stay on the current page
+              query: currentQuery,
+            }, undefined, { shallow: true }); // Use shallow routing for pagination
+            window.scrollTo(0, 0); // Scroll to top after navigation
+         }
+       } catch (e) {
+         console.error("Error parsing prevurl:", e);
+         // Fallback or error handling if prevurl is not valid
+       }
     }
-  }, [nexturl, router, router.query.next]);
+  }, [prevurl, router]); // Dependencies: prevurl, router object (pathname, query)
 
   if (isEmpty)
     return (

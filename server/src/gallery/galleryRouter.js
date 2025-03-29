@@ -9,23 +9,28 @@ const {
 } = require('./galleryApi')
 const { getCookieString } = require('../utils/cookies')
 const cache = require('../cache')
-const router = express.Router()
+const router = express.Router();
 
 router.get('/', async (req, res) => {
-  const page = parseInt(req.query.page || 0);
-  const f_search = req.query.f_search || '';
-  const next = req.query.next || '';
-  const prev = req.query.prev || '';
+  // Use the entire query object from the request
+  const query = req.query;
 
-  const cacheKey = `[g${req.cookies.ipb_member_id}]` + JSON.stringify({ page, f_search, next, prev, cookie: getCookieString(req.cookies) });
+  // Generate cache key based on the full query and user ID
+  // Sort query keys to ensure consistent cache key regardless of parameter order
+  const sortedQueryKeys = Object.keys(query).sort();
+  const sortedQuery = {};
+  sortedQueryKeys.forEach(key => {
+    sortedQuery[key] = query[key];
+  });
+  const cacheKey = `[g${req.cookies.ipb_member_id}]` + JSON.stringify({ query: sortedQuery, cookie: getCookieString(req.cookies) });
+
 
   let content = cache.get(cacheKey);
   if (!content) {
-    content = await galleryList(
-      { page, f_search, next, prev },
-      getCookieString(req.cookies)
-    );
-    cache.set(cacheKey, content, 180);
+    // Pass the entire query object to galleryList
+    content = await galleryList(query, getCookieString(req.cookies));
+    // Cache the result with the generated key
+    cache.set(cacheKey, content, 180); // Cache for 3 minutes
   }
 
   res.json(content);
